@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@import "maplibre-gl/dist/maplibre-gl.css";
+
+@theme inline {
+  --color-silage: #d9602b;
+  --color-grain: #3d63e8;
+  --color-ink: #17171c;
+  --color-body: #3c3c43;
+  --color-muted: #77777f;
+  --color-line: #e4e4e0;
+  --color-wash: #eef0e4;
+  --color-forest: #10281d;
+  --font-sans: var(--font-body);
+  --font-display: var(--font-head);
+  --font-mono: var(--font-code);
+}
+
+html, body { height: 100%; }
+html { scroll-behavior: smooth; }
+body { background: #fff; color: var(--color-ink); }
+
+/* Small uppercase mono label used above headings and for metadata. */
+.eyebrow {
+  font-family: var(--font-code);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms, color 120ms, border-color 120ms;
+}
+.pill-solid { background: var(--color-ink); color: #fff; border: 1px solid var(--color-ink); }
+.pill-solid:hover { background: #33333b; }
+.pill-line { background: transparent; color: var(--color-ink); border: 1px solid var(--color-ink); }
+.pill-line:hover { background: var(--color-ink); color: #fff; }
+.pill-light { background: #fff; color: var(--color-ink); border: 1px solid #fff; }
+.pill-light:hover { background: transparent; color: #fff; }
+
+.plot-grid {
+  background-color: var(--color-wash);
+  background-image:
+    linear-gradient(to right, rgb(16 40 29 / 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(16 40 29 / 0.09) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+.maplibregl-popup-content { border-radius: 10px; padding: 10px 12px; font-size: 12px; font-family: var(--font-body); box-shadow: 0 8px 24px rgb(0 0 0 / 0.18); }
+.maplibregl-ctrl-group { border-radius: 10px !important; box-shadow: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
