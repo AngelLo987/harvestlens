@@ -1,4 +1,4 @@
-/** HarvestLens mark: a lens with crop rows running through it. */
+/** Cornea mark: a lens (the eye's cornea) with crop rows running through it. */
 export default function Logo({ light = false, size = 22 }: { light?: boolean; size?: number }) {
   const fg = light ? "#fff" : "#17171c";
   const bg = light ? "#10281d" : "#fff";
@@ -12,7 +12,7 @@ export default function Logo({ light = false, size = 22 }: { light?: boolean; si
           <path d="M8.5 6.8C10.5 6 13.5 6 15.5 6.8" />
         </g>
       </svg>
-      <span className="font-display text-[19px] font-medium tracking-[-0.02em]">HarvestLens</span>
+      <span className="font-display text-[19px] font-medium tracking-[-0.02em]">Cornea</span>
     </span>
   );
 }

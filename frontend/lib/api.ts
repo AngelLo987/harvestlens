@@ -52,3 +52,16 @@ export const doyToDate = (d: number) => {
   dt.setUTCDate(d);
   return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 };
+
+export interface ImageResult {
+  metadata: {
+    filename: string; format: string; width: number; height: number; bands: number; missing: ("location" | "date")[]; in_us: boolean | null;
+    location: { lat: number; lon: number; bbox: [number, number, number, number] | null; source: string } | null;
+    date: { value: string; source: string } | null;
+  };
+  parameters: { values: Record<string, string>; notes: string; model: string } | null;
+  parameters_error: string | null;
+  parameter_spec: { name: string; label: string; values: string[] }[];
+  prediction: { label: Label; prob_silage: number } | null;
+  preview: string;
+}

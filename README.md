@@ -1,4 +1,4 @@
-# HarvestLens
+# Cornea
 
 Field-level **silage vs. grain** corn classification from Sentinel-2 optical and Sentinel-1 radar time series, with an AI copilot and an interactive map dashboard. Built for the USDA *Hack the Harvest* challenge.
 
@@ -23,6 +23,12 @@ To turn on **NVIDIA Nemotron**, copy `backend/.env.example` to `backend/.env`, s
 The panel on the map runs a streaming tool-calling loop (`backend/app/map_agent.py`, `POST /api/agent`, server-sent events). Nemotron reads data through `find_fields`, `compare_counties` and `get_field`, and operates the map through `set_map_filters`, `fly_to`, `highlight_fields`, `open_field_panel` and `clear_map`. Tool arguments are validated on the server and invalid calls go back to the model to correct, with a cap of 8 steps per run. The panel shows reasoning, each tool call and result, tokens, time to first token and total time.
 
 To test the loop offline, run `uvicorn tests.mock_nim:app --port 8799` and point the API at it with `NVIDIA_BASE_URL=http://127.0.0.1:8799/v1`, plus a `NEMOTRON_MODEL` containing "mock" so it can't be mistaken for the real model.
+
+### Image analysis (Nemotron reads the image)
+
+**Analyze image** in the map header takes one field image (JPEG, PNG or GeoTIFF). `backend/app/image_input.py` reads its location and date (GeoTIFF georeferencing, EXIF GPS, a timestamp in the file, a date in the file name, or values typed in), then Nemotron reports a fixed set of parameters about what is visible. The parameters are placeholders: edit the `PARAMETERS` list in that file and the prompt, validation and UI follow. The team's harvest-type model plugs in at `backend/app/image_model.py`; until then the UI says no model is connected rather than showing a label. `POST /api/image` (multipart `file`, optional `lat`, `lon`, `date`).
+
+Cornea covers the United States only: images located outside it are not analyzed, and the map camera is limited to the US.
 
 ## How it works
 
@@ -50,7 +56,7 @@ To run on real imagery:
 ```bash
 cd backend && .venv/bin/pip install earthengine-api && earthengine authenticate
 EE_PROJECT=<gcp-project> .venv/bin/python -m pipeline.ingest_gee --boundaries fields.geojson --county-id marathon-wi --year 2025
-HARVESTLENS_REBUILD=1 .venv/bin/uvicorn app.main:app --port 8000
+CORNEA_REBUILD=1 .venv/bin/uvicorn app.main:app --port 8000
 ```
 
 Add a `label` property (silage/grain) to the boundary features to get real validation numbers. Real ground truth (e.g. NASS survey or FSA-reported silage acreage) is the most important next step for the >85% accuracy goal. Uploaded boundaries in the UI also get simulated series unless they were ingested through Earth Engine.

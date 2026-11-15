@@ -1,7 +1,7 @@
 """Real-data ingestion: Sentinel-2 + Sentinel-1 time series per field via Google Earth Engine.
 
 Writes backend/data/fields_gee.json in the same per-field schema the simulator produces, so the
-API classifies real fields alongside the demo data (restart with HARVESTLENS_REBUILD=1).
+API classifies real fields alongside the demo data (restart with CORNEA_REBUILD=1).
 
 Setup (once):
     .venv/bin/pip install earthengine-api
@@ -183,7 +183,7 @@ def main():
     existing = json.loads(OUT.read_text())["fields"] if OUT.exists() else []
     merged = [f for f in existing if f["county_id"] != county_id] + out
     OUT.write_text(json.dumps({"fields": merged}))
-    log(f"Wrote {len(out)} corn fields for {county_id} -> {OUT}  (restart API with HARVESTLENS_REBUILD=1)")
+    log(f"Wrote {len(out)} corn fields for {county_id} -> {OUT}  (restart API with CORNEA_REBUILD=1)")
 
 
 if __name__ == "__main__":

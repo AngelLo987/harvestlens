@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start HarvestLens API (:8000) and web (:3000). Ctrl-C stops both.
+# Start Cornea API (:8000) and web (:3000). Ctrl-C stops both.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT/backend"

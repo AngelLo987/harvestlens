@@ -58,7 +58,7 @@ export default function Copilot({ onResult, external }: { onResult: (r: CopilotR
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
         {msgs.map((m, i) => (
           <div key={i}>
-            <div className="eyebrow text-muted">{m.role === "user" ? "You" : "HarvestLens"}</div>
+            <div className="eyebrow text-muted">{m.role === "user" ? "You" : "Cornea"}</div>
             <p className={`mt-1 text-[14px] leading-[22px] ${m.role === "user" ? "font-medium text-ink" : "text-body"}`}>{m.text}</p>
             {m.meta && <div className="eyebrow mt-1.5 text-[10px] text-muted">{m.meta}</div>}
           </div>

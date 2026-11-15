@@ -35,6 +35,9 @@ const STYLE: maplibregl.StyleSpecification = {
   layers: [{ id: "imagery", type: "raster", source: "imagery", paint: { "raster-saturation": -0.35, "raster-brightness-max": 0.85 } }],
 };
 
+// Cornea covers the United States only: the camera cannot leave this box (Hawaii and Alaska to Puerto Rico and Maine).
+const US_BOUNDS: [[number, number], [number, number]] = [[-180, 10], [-50, 75]];
+
 export default function MapView({
   data, selected, onSelect, fitTo, highlight, padLeft = 0,
 }: {
@@ -60,7 +63,7 @@ export default function MapView({
   onSelectRef.current = onSelect;
 
   useEffect(() => {
-    const m = new maplibregl.Map({ container: el.current!, style: structuredClone(STYLE), center: [-95, 41], zoom: 3.6, attributionControl: { compact: true } });
+    const m = new maplibregl.Map({ container: el.current!, style: structuredClone(STYLE), center: [-95, 41], zoom: 3.6, maxBounds: US_BOUNDS, attributionControl: { compact: true } });
     map.current = m;
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
     m.addControl(new maplibregl.ScaleControl({ unit: "imperial" }), "bottom-right");

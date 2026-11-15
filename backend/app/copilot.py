@@ -2,7 +2,7 @@
 
 Uses NVIDIA Nemotron (OpenAI-compatible NIM endpoint) when NVIDIA_API_KEY is set,
 otherwise a deterministic rule-based parser so the demo never depends on network access.
-The LLM only ever produces a JSON plan and a narrative over numbers HarvestLens computed;
+The LLM only ever produces a JSON plan and a narrative over numbers Cornea computed;
 it never invents field data.
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ STATE_NAMES = {"CA": "california", "WI": "wisconsin", "IA": "iowa", "PA": "penns
 
 INTENTS = ["filter", "compare", "summary", "explain", "export", "anomalies"]
 
-PLAN_PROMPT = """You are the query planner for HarvestLens, a USDA tool that classifies corn fields as silage or grain.
+PLAN_PROMPT = """You are the query planner for Cornea, a USDA tool that classifies corn fields as silage or grain.
 Convert the analyst's question into a JSON plan. Respond with JSON only, no prose.
 Schema:
 {{"intent": one of {intents},
@@ -37,7 +37,7 @@ Schema:
 "high-confidence" means min_confidence 0.9. "uncertain"/"ambiguous"/"anomalies" means anomalies_only true.
 Field ids look like YOL-0012."""
 
-ANSWER_PROMPT = """You are HarvestLens, an analyst copilot for USDA. Using ONLY the JSON facts given, answer the
+ANSWER_PROMPT = """You are Cornea, an analyst copilot for USDA. Using ONLY the JSON facts given, answer the
 analyst's question in 2-4 concise sentences. Quote numbers exactly. Mention data caveats (low confidence,
 cloud gaps) when they appear in the facts. No markdown headers."""
 

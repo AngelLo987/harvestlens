@@ -49,7 +49,7 @@ export default function ProductPreview() {
         <Logo size={18} />
         <div className="eyebrow mt-6 text-muted">You</div>
         <p className="mt-1 text-[14px] leading-5">{QUESTION}</p>
-        <div className="eyebrow mt-5 text-muted">HarvestLens</div>
+        <div className="eyebrow mt-5 text-muted">Cornea</div>
         <p className="mt-1 min-h-24 text-[14px] leading-5 text-body">{answer ?? "Reading fields…"}</p>
         <div className="mt-auto border-t border-line pt-3">
           <div className="eyebrow text-muted">Yolo County, CA</div>

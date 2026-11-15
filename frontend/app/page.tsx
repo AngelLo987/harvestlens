@@ -74,7 +74,7 @@ export default function Landing() {
 
       <header className="sticky top-0 z-40 bg-white">
         <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-10 px-6 md:px-10">
-          <Link href="/" aria-label="HarvestLens home"><Logo /></Link>
+          <Link href="/" aria-label="Cornea home"><Logo /></Link>
           <nav className="hidden gap-7 text-[14px] md:flex">
             <a href="#signal" className="hover:text-muted">The signal</a>
             <a href="#who" className="hover:text-muted">Who it serves</a>
@@ -88,7 +88,7 @@ export default function Landing() {
         <div className="mx-auto max-w-[1400px] px-6 pb-16 pt-20 text-center md:px-10 md:pt-28">
           <h1 className="font-display text-[44px] leading-[1.04] tracking-[-0.025em] md:text-[96px]">Silage or grain.<br />Field by field.</h1>
           <p className="mx-auto mt-7 max-w-xl text-[18px] leading-7 text-body">
-            HarvestLens reads corn fields from satellite radar and optical time series, so USDA analysts can answer a county question in under a minute.
+            Cornea reads corn fields from satellite radar and optical time series, so USDA analysts can answer a county question in under a minute.
           </p>
         </div>
 
@@ -135,7 +135,7 @@ export default function Landing() {
             <div className="rounded-xl bg-white p-6 text-ink">
               <div className="eyebrow text-muted">You</div>
               <p className="mt-1 text-[16px] leading-6">{flagged?.q ?? "…"}</p>
-              <div className="eyebrow mt-5 text-muted">HarvestLens</div>
+              <div className="eyebrow mt-5 text-muted">Cornea</div>
               <p className="mt-1 text-[16px] leading-6 text-body">{flagged?.a ?? "Reading fields…"}</p>
               <Link href="/app" className="pill pill-solid mt-6">Try your own question</Link>
             </div>

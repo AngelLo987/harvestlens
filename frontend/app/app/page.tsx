@@ -5,10 +5,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Copilot, { SAMPLE_QUERIES, type CopilotResponse } from "@/components/Copilot";
 import Dashboard from "@/components/Dashboard";
 import FieldPanel from "@/components/FieldPanel";
+import ImagePanel from "@/components/ImagePanel";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import MapAgent, { type MapAction } from "@/components/MapAgent";
-import { EMPTY_FILTERS, getJSON, qs, type FieldDetail, type Filters, type Meta, type Summary } from "@/lib/api";
+import { EMPTY_FILTERS, getJSON, qs, type FieldDetail, type ImageResult, type Filters, type Meta, type Summary } from "@/lib/api";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -28,11 +29,13 @@ export default function Home() {
   const [highlight, setHighlight] = useState<GeoJSON.FeatureCollection | null>(null);
   const [railHidden, setRailHidden] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
+  const [image, setImage] = useState<{ file: File; result: ImageResult | null; busy: boolean; error: string | null } | null>(null);
 
   const loadMeta = useCallback(() => getJSON<Meta>("/api/meta").then(setMeta), []);
   useEffect(() => {
     loadMeta();
-    if (!localStorage.getItem("hl-onboarded")) setOnboard(true);
+    if (!localStorage.getItem("cornea-onboarded")) setOnboard(true);
   }, [loadMeta]);
 
   useEffect(() => {
@@ -64,7 +67,7 @@ export default function Home() {
   const download = (format: "csv" | "geojson", f: Filters = filters) => {
     const a = document.createElement("a");
     a.href = `/api/export?format=${format}&${qs(f)}`;
-    a.download = `harvestlens_fields.${format}`;
+    a.download = `cornea_fields.${format}`;
     a.click();
   };
 
@@ -127,6 +130,27 @@ export default function Home() {
     setToast(`Classified ${data.fields} uploaded field(s). Series simulated — connect Earth Engine for real imagery.`);
   }
 
+  async function analyzeImage(file: File, extra: { lat?: string; lon?: string; date?: string } = {}) {
+    setSelected(null);
+    setRailHidden(true); // keep the map wide enough for the agent panel and the image panel together
+    setImage((cur) => ({ file, result: cur?.file === file ? cur.result : null, busy: true, error: null }));
+    const fd = new FormData();
+    fd.append("file", file);
+    for (const [k, v] of Object.entries(extra)) if (v) fd.append(k, v);
+    try {
+      const r = await fetch("/api/image", { method: "POST", body: fd });
+      const data = await r.json().catch(() => null);
+      if (!r.ok) throw new Error(typeof data?.detail === "string" ? data.detail : `Image analysis failed (${r.status})`);
+      const result = data as ImageResult;
+      setImage((cur) => (cur?.file === file ? { file, result, busy: false, error: null } : cur));
+      const loc = result.metadata.location;
+      if (loc) setFit(loc.bbox ?? [loc.lon - 0.02, loc.lat - 0.02, loc.lon + 0.02, loc.lat + 0.02]);
+    } catch (e) {
+      const error = e instanceof Error ? e.message : "Image analysis failed";
+      setImage((cur) => (cur?.file === file ? { ...cur, busy: false, error } : cur));
+    }
+  }
+
   useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 6000); return () => clearTimeout(t); } }, [toast]);
 
   const count = geo?.features.length ?? 0;
@@ -146,7 +170,7 @@ export default function Home() {
         <div className="shrink-0 bg-black px-4 py-1.5 text-center text-[12px] text-white">Demo build: field data is simulated Sentinel-1/2 series, not real imagery.</div>
       )}
       <header className="flex min-h-16 shrink-0 flex-wrap items-center gap-x-6 gap-y-2 bg-white px-5">
-        <Link href="/" aria-label="HarvestLens home"><Logo /></Link>
+        <Link href="/" aria-label="Cornea home"><Logo /></Link>
         <div className="ml-auto flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px]">
           <select aria-label="County" value={filters.county[0] ?? ""} onChange={(e) => setFilters({ ...filters, county: e.target.value ? [e.target.value] : [] })}
             className="cursor-pointer bg-transparent py-1 text-[14px] outline-none">
@@ -155,6 +179,8 @@ export default function Home() {
           </select>
           <button onClick={() => fileRef.current?.click()} className="hover:text-muted" title="Upload field boundaries (GeoJSON polygons)">Upload boundaries</button>
           <input ref={fileRef} type="file" accept=".geojson,.json,application/geo+json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onUpload(f); e.target.value = ""; }} />
+          <button onClick={() => imageRef.current?.click()} className="hover:text-muted" title="Analyze one field image (JPEG, PNG or GeoTIFF)">Analyze image</button>
+          <input ref={imageRef} type="file" accept="image/*,.tif,.tiff" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) analyzeImage(f); e.target.value = ""; }} />
           <button onClick={() => setOnboard(true)} className="hover:text-muted">Help</button>
           <button onClick={() => download("csv")} className="pill pill-line">Export CSV</button>
           <button onClick={() => download("geojson")} className="pill pill-solid">Export GeoJSON</button>
@@ -198,6 +224,8 @@ export default function Home() {
           {toast && <div role="status" className="absolute bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-ink px-5 py-2 text-[14px] text-white">{toast}</div>}
         </main>
 
+        {image && !selected && <ImagePanel result={image.result} busy={image.busy} error={image.error}
+          onRerun={(extra) => analyzeImage(image.file, extra)} onClose={() => { setImage(null); setRailHidden(false); }} />}
         {selected && <FieldPanel field={selected} onClose={() => { setSelected(null); setRailHidden(false); }} onAsk={(q) => { setTab("copilot"); setExternal({ q, n: Date.now() }); }} />}
       </div>
 
@@ -214,12 +242,12 @@ export default function Home() {
             <div className="eyebrow mt-4 text-muted">Start with</div>
             <div className="mt-1">
               {SAMPLE_QUERIES.slice(0, 3).map((s) => (
-                <button key={s} onClick={() => { setOnboard(false); localStorage.setItem("hl-onboarded", "1"); setTab("copilot"); setExternal({ q: s, n: Date.now() }); }}
+                <button key={s} onClick={() => { setOnboard(false); localStorage.setItem("cornea-onboarded", "1"); setTab("copilot"); setExternal({ q: s, n: Date.now() }); }}
                   className="flex w-full items-center justify-between border-b border-line py-2.5 text-left text-[14px] hover:text-muted">{s}<span aria-hidden="true">→</span></button>
               ))}
             </div>
             <div className="mt-6 flex justify-end">
-              <button onClick={() => { setOnboard(false); localStorage.setItem("hl-onboarded", "1"); }} className="pill pill-solid">Go to the map</button>
+              <button onClick={() => { setOnboard(false); localStorage.setItem("cornea-onboarded", "1"); }} className="pill pill-solid">Go to the map</button>
             </div>
           </div>
         </div>

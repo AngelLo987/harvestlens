@@ -1,6 +1,7 @@
-"""HarvestLens API."""
+"""Cornea API."""
 from __future__ import annotations
 
+import base64
 import csv
 import io
 import json
@@ -13,7 +14,7 @@ from collections import Counter
 from pathlib import Path
 
 import numpy as np
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
@@ -22,6 +23,8 @@ from pydantic import Field as PField
 from . import env  # noqa: F401  (must load before copilot reads its settings)
 from . import copilot
 from . import features as F
+from . import image_input
+from . import image_model
 from . import map_agent
 from .model import HarvestClassifier, doy_to_date, explain
 from .simulate import COUNTIES, COUNTY_BY_ID, County, Field, generate_county, simulate_series
@@ -29,7 +32,7 @@ from .simulate import COUNTIES, COUNTY_BY_ID, County, Field, generate_county, si
 CACHE = Path(__file__).resolve().parent.parent / ".cache" / "state-v1.pkl"
 REAL_DATA = Path(__file__).resolve().parent.parent / "data" / "fields_gee.json"
 
-app = FastAPI(title="HarvestLens API", version="0.1.0")
+app = FastAPI(title="Cornea API", version="0.1.0")
 # Local origins only: /api/agent spends the NVIDIA key, so arbitrary websites must not be able to call it.
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"], allow_methods=["*"], allow_headers=["*"])
 
@@ -92,7 +95,7 @@ def load_real_fields() -> list[Field]:
 
 def build_state():
     stale = REAL_DATA.exists() and CACHE.exists() and REAL_DATA.stat().st_mtime > CACHE.stat().st_mtime
-    if CACHE.exists() and not stale and not os.environ.get("HARVESTLENS_REBUILD"):
+    if CACHE.exists() and not stale and not os.environ.get("CORNEA_REBUILD"):
         return pickle.loads(CACHE.read_bytes())
     t = time.time()
     clf = HarvestClassifier().fit()
@@ -242,7 +245,7 @@ def export(format: str = Query("csv", pattern="^(csv|geojson)$"), county: str | 
         for feat, r in zip(fc["features"], recs):
             feat["properties"]["features"] = r["features"]
         return Response(json.dumps(fc), media_type="application/geo+json",
-                        headers={"Content-Disposition": "attachment; filename=harvestlens_fields.geojson"})
+                        headers={"Content-Disposition": "attachment; filename=cornea_fields.geojson"})
     buf = io.StringIO()
     w = csv.writer(buf)
     cols = ["field_id", "county_id", "label", "prob_silage", "ci_low", "ci_high", "confidence", "area_ha",
@@ -255,7 +258,7 @@ def export(format: str = Query("csv", pattern="^(csv|geojson)$"), county: str | 
                     round(sum(p[0] for p in ring) / len(ring), 6), round(sum(p[1] for p in ring) / len(ring), 6),
                     r["source"]] + [r["features"][k] for k in F.FEATURE_NAMES])
     return Response(buf.getvalue(), media_type="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=harvestlens_fields.csv"})
+                    headers={"Content-Disposition": "attachment; filename=cornea_fields.csv"})
 
 
 class CopilotIn(BaseModel):
@@ -402,6 +405,33 @@ async def upload(file: UploadFile = File(...)):
         STATE["fields"][r["id"]] = r
     METRICS["uploads"] += 1
     return {"county_id": "uploaded", "fields": len(fields_new), "summary": summarize(select(["uploaded"]))}
+
+
+@app.post("/api/image")
+def analyze_image(file: UploadFile = File(...), lat: float | None = Form(None), lon: float | None = Form(None),
+                  date: str | None = Form(None)):  # sync on purpose: runs in a worker thread, so a slow Nemotron call cannot freeze the API
+    """Read one field image with its location and date, have Nemotron report the parameters, then run the model.
+
+    lat/lon/date are optional and override what the file carries; use them when the file has no metadata.
+    """
+    try:
+        img = image_input.read_image(file.file.read(), file.filename or "image", lat, lon, date or None)
+    except image_input.ImageError as e:
+        raise HTTPException(400, str(e))
+    meta = img["metadata"]
+    params, params_error, prediction = None, None, None
+    if meta["in_us"] is False:
+        params_error = image_input.OUTSIDE_US
+    else:
+        try:
+            params = image_input.describe(img["preview_jpeg"], meta)
+        except image_input.ImageError as e:
+            params_error = str(e)
+        prediction = image_model.predict(img["rgb"], meta, params["values"] if params else None)
+    METRICS["images"] = METRICS.get("images", 0) + 1
+    return {"metadata": meta, "parameters": params, "parameters_error": params_error,
+            "parameter_spec": image_input.parameter_spec(), "prediction": prediction,
+            "preview": "data:image/jpeg;base64," + base64.b64encode(img["preview_jpeg"]).decode()}
 
 
 @app.get("/api/metrics")

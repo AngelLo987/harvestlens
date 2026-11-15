@@ -1,4 +1,4 @@
-"""Nemotron map agent: a streaming tool-calling loop that operates the HarvestLens map.
+"""Nemotron map agent: a streaming tool-calling loop that operates the Cornea map.
 
 The model never sees or invents field data except through tool results, and it can only
 change the map through the validated tools below. Every step is streamed to the UI as an
@@ -22,7 +22,7 @@ MAX_STEPS = 8
 MAX_HIGHLIGHT = 200
 FLAGS = ["low_confidence", "model_disagreement", "cloud_gaps", "conflicting_signals", "optical_sar_timing_mismatch"]
 
-SYSTEM_PROMPT = """You are the HarvestLens map agent, used by USDA analysts to classify corn fields as silage or grain.
+SYSTEM_PROMPT = """You are the Cornea map agent, used by USDA analysts to classify corn fields as silage or grain.
 You operate a live map through tools. Work in this order: query the data, act on the map, then answer.
 
 Rules:
